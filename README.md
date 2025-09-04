@@ -11,18 +11,31 @@
 
 ### Windows
 ```cmd
+# 設定排程任務（需要管理員權限）
 windows.bat
+
+# 立即測試（不需要管理員權限）
+test_now.bat
 ```
 
 ### Linux
 ```bash
+# 設定 cron 任務
 ./linux.sh
+
+# 立即測試
+./test_now.sh
 ```
 
 ## 執行時間
 
-每5小時執行一次：
+每5小時執行一次，可依需求更改：
 - 07:30, 12:30, 17:30, 22:30
+
+## 背景執行
+
+- **Windows**: 完全隱藏執行，不會跳出視窗
+- **Linux**: 背景執行
 
 ## 時區設定
 
@@ -54,9 +67,22 @@ $commandToRun = "your command"
 
 ## 日誌查看
 
-- `scheduled_task.log` - 主日誌
-- `output.log` - 命令輸出
-- `error.log` - 錯誤訊息
+所有執行記錄都整合在單一日誌檔中：
+- `scheduled_task.log` - 包含所有日誌、命令輸出和錯誤訊息
+
+## 測試功能
+
+可隨時測試腳本功能，無需等待排程時間：
+
+### Windows
+```cmd
+test_now.bat
+```
+
+### Linux
+```bash
+./test_now.sh
+```
 
 ## 移除任務
 
@@ -75,7 +101,16 @@ crontab -e  # 刪除相關行
 
 ## 檔案說明
 
-- `claude_scheduler.ps1` - Windows 腳本
-- `windows.bat` - Windows 設定工具
-- `claude_scheduler.sh` - Linux 腳本
-- `linux.sh` - Linux 設定工具
+### Windows
+- `claude_scheduler.ps1` - 主腳本
+- `windows.bat` - 排程設定工具（需要管理員權限）
+- `test_now.bat` - 立即測試工具
+
+### Linux
+- `claude_scheduler.sh` - 主腳本  
+- `linux.sh` - cron 設定工具
+- `test_now.sh` - 立即測試工具
+
+### 共用
+- `README.md` - 說明文件
+- `scheduled_task.log` - 執行日誌

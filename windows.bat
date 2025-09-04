@@ -2,6 +2,18 @@
 echo Claude Auto Reset Task Setup Tool
 echo ================================
 
+echo Checking administrator privileges...
+net session >nul 2>&1
+if %errorLevel% == 0 (
+    echo Running with administrator privileges.
+) else (
+    echo ERROR: Administrator privileges required!
+    echo Please right-click on this batch file and select "Run as administrator"
+    echo.
+    pause
+    exit /b 1
+)
+
 echo Setting PowerShell execution policy...
 powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
 

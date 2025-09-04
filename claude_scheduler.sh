@@ -20,12 +20,9 @@ SCHEDULE_TIMES=(
     "22:30"  # Evening (17:30 + 5 hours)
 )
 
-# Log file path
-LOG_FILE="$(dirname "$0")/scheduled_task.log"
-
-# Output files
-OUTPUT_FILE="$(dirname "$0")/output.log"
-ERROR_FILE="$(dirname "$0")/error.log"
+# Log file path - use absolute path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="$SCRIPT_DIR/scheduled_task.log"
 
 # =========================== Functions ===========================
 write_log() {
@@ -57,35 +54,47 @@ test_should_run() {
 execute_command() {
     write_log "Starting command execution: $COMMAND_TO_RUN"
 
+    # Create temporary files
+    local output_file error_file
+    output_file=$(mktemp)
+    error_file=$(mktemp)
+
     # Execute command with output capture
-    if eval "$COMMAND_TO_RUN" > "$OUTPUT_FILE" 2> "$ERROR_FILE"; then
+    if eval "$COMMAND_TO_RUN" > "$output_file" 2> "$error_file"; then
         # Read output if available
-        if [[ -s "$OUTPUT_FILE" ]]; then
+        if [[ -s "$output_file" ]]; then
             local output
-            output=$(cat "$OUTPUT_FILE")
+            output=$(cat "$output_file")
             write_log "Command output: $output"
+        else
+            write_log "Command produced no output"
         fi
 
         # Read error if available
-        if [[ -s "$ERROR_FILE" ]]; then
+        if [[ -s "$error_file" ]]; then
             local error_output
-            error_output=$(cat "$ERROR_FILE")
+            error_output=$(cat "$error_file")
             write_log "Command error: $error_output"
         fi
 
         write_log "Command executed successfully"
+        
+        # Clean up temporary files
+        rm -f "$output_file" "$error_file"
         return 0
     else
         local exit_code=$?
         write_log "Command execution failed with exit code: $exit_code"
 
         # Read error output on failure
-        if [[ -s "$ERROR_FILE" ]]; then
+        if [[ -s "$error_file" ]]; then
             local error_output
-            error_output=$(cat "$ERROR_FILE")
+            error_output=$(cat "$error_file")
             write_log "Command error: $error_output"
         fi
 
+        # Clean up temporary files
+        rm -f "$output_file" "$error_file"
         return $exit_code
     fi
 }
@@ -131,12 +140,23 @@ if [[ "$1" == "setup" ]]; then
     exit 0
 fi
 
-# Check if command should be executed
-if test_should_run; then
+# Check if test mode or command should be executed  
+if [[ "$1" == "test" ]]; then
+    write_log "Test mode: Force executing command regardless of schedule..."
+    execute_command
+elif test_should_run; then
     write_log "Current time matches schedule, starting execution..."
     execute_command
 else
     write_log "Current time is not in schedule, skipping execution"
+    local current_time
+    if [[ -n "$TIMEZONE" ]]; then
+        current_time=$(TZ="$TIMEZONE" date '+%H:%M')
+    else
+        current_time=$(date '+%H:%M')
+    fi
+    write_log "Scheduled times: ${SCHEDULE_TIMES[*]}"
+    write_log "Current time check: $current_time"
 fi
 
 write_log "=== Script Execution Completed ==="
